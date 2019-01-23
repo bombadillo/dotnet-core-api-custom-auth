@@ -4,7 +4,7 @@
 
 - .Net Core 2.2
 
-## Features
+## Features :sparkles:
 
 - Cookie & query string authentication
   - Allow users to authenticate and maintain sessions using both cookies and query strings
