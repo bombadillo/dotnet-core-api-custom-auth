@@ -16,27 +16,33 @@ namespace CustomAuthAttribute.Authorization
 
     protected override Task HandleRequirementAsync (AuthorizationHandlerContext context, CustomAuthorize requirement)
     {
-      var sessionId = GetSessionId ();
+      var validSessionId = ValidateSessionId ();
+      var userLoggedIn = context.User.Identity.IsAuthenticated;
 
-      if (string.IsNullOrWhiteSpace (sessionId))
+      if (validSessionId)
       {
-        return UnAuthorized (context, requirement);
+        return Authorized (context, requirement);
       }
 
-      return Authorized (context, requirement);
+      if (userLoggedIn)
+      {
+        return Authorized (context, requirement);
+      }
+
+      return UnAuthorized (context, requirement);
     }
 
-    private string GetSessionId ()
+    private bool ValidateSessionId ()
     {
       var queries = _httpContextAccessor.HttpContext.Request.Query;
       var sessionIds = queries["session"];
 
       if (sessionIds.Count != 1)
       {
-        return null;
+        return false;
       }
 
-      return sessionIds[0];
+      return !string.IsNullOrWhiteSpace (sessionIds[0]);
     }
 
     private Task Authorized (AuthorizationHandlerContext context, CustomAuthorize requirement)
