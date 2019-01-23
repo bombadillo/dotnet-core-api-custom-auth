@@ -9,24 +9,24 @@ namespace CustomAuthAttribute.Authorization
   {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CustomAuthorizeHandler(IHttpContextAccessor httpContextAccessor)
+    public CustomAuthorizeHandler (IHttpContextAccessor httpContextAccessor)
     {
       _httpContextAccessor = httpContextAccessor;
     }
 
-    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, CustomAuthorize requirement)
+    protected override Task HandleRequirementAsync (AuthorizationHandlerContext context, CustomAuthorize requirement)
     {
-      var sessionId = GetSessionId();
+      var sessionId = GetSessionId ();
 
-      if (string.IsNullOrWhiteSpace(sessionId))
+      if (string.IsNullOrWhiteSpace (sessionId))
       {
-        return UnAuthorized(context, requirement);
+        return UnAuthorized (context, requirement);
       }
 
-      return Authorized(context, requirement);
+      return Authorized (context, requirement);
     }
 
-    private string GetSessionId()
+    private string GetSessionId ()
     {
       var queries = _httpContextAccessor.HttpContext.Request.Query;
       var sessionIds = queries["session"];
@@ -39,16 +39,16 @@ namespace CustomAuthAttribute.Authorization
       return sessionIds[0];
     }
 
-    private Task Authorized(AuthorizationHandlerContext context, CustomAuthorize requirement)
+    private Task Authorized (AuthorizationHandlerContext context, CustomAuthorize requirement)
     {
-      context.Succeed(requirement);
+      context.Succeed (requirement);
 
       return Task.CompletedTask;
     }
 
-    private Task UnAuthorized(AuthorizationHandlerContext context, CustomAuthorize requirement)
+    private Task UnAuthorized (AuthorizationHandlerContext context, CustomAuthorize requirement)
     {
-      context.Fail();
+      context.Fail ();
 
       return Task.CompletedTask;
     }

@@ -17,7 +17,7 @@ namespace CustomAuthAttribute
 {
   public class Startup
   {
-    public Startup(IConfiguration configuration)
+    public Startup (IConfiguration configuration)
     {
       Configuration = configuration;
     }
@@ -25,41 +25,47 @@ namespace CustomAuthAttribute
     public IConfiguration Configuration { get; }
 
     // This method gets called by the runtime. Use this method to add services to the container.
-    public void ConfigureServices(IServiceCollection services)
+    public void ConfigureServices (IServiceCollection services)
     {
-      services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+      services.AddMvc ().SetCompatibilityVersion (CompatibilityVersion.Version_2_2);
 
-      services.AddAuthorization(options =>
+      services.AddAuthorization (options =>
       {
-        options.AddPolicy("CustomAuthorize", policy => policy.Requirements.Add(new CustomAuthorize()));
+        options.AddPolicy ("CustomAuthorize", policy => policy.Requirements.Add (new CustomAuthorize ()));
       });
 
-      services.AddSingleton<IAuthorizationHandler, CustomAuthorizeHandler>();
+      services.AddSingleton<IAuthorizationHandler, CustomAuthorizeHandler> ();
 
-      services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-      .AddCookie(options =>
+      services.AddAuthentication (CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddCookie (options =>
         {
           options.Events.OnRedirectToLogin = (context) =>
-            {
-              context.Response.StatusCode = 401;
-              return Task.CompletedTask;
-            };
+          {
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+          };
+
+          options.Events.OnRedirectToAccessDenied = (context) =>
+          {
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+          };
         });
 
-      services.AddHttpContextAccessor();
+      services.AddHttpContextAccessor ();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+    public void Configure (IApplicationBuilder app, IHostingEnvironment env)
     {
-      if (env.IsDevelopment())
+      if (env.IsDevelopment ())
       {
-        app.UseDeveloperExceptionPage();
+        app.UseDeveloperExceptionPage ();
       }
 
-      app.UseAuthentication();
+      app.UseAuthentication ();
 
-      app.UseMvc();
+      app.UseMvc ();
     }
   }
 }
