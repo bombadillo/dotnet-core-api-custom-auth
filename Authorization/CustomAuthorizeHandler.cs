@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -21,12 +22,12 @@ namespace CustomAuthAttribute.Authorization
 
       if (validSessionId)
       {
-        return Authorized (context, requirement);
+        return HandleSourceSystem (context, requirement);
       }
 
-      if (userLoggedIn)
+      if (userLoggedIn && UserHasClaims (context, requirement))
       {
-        return Authorized (context, requirement);
+        return HandleUser (context, requirement);
       }
 
       return UnAuthorized (context, requirement);
@@ -43,6 +44,48 @@ namespace CustomAuthAttribute.Authorization
       }
 
       return !string.IsNullOrWhiteSpace (sessionIds[0]);
+    }
+
+    private Task HandleSourceSystem (AuthorizationHandlerContext context, CustomAuthorize requirement)
+    {
+      if (SourceSystemHasClaims (context, requirement))
+      {
+        return Authorized (context, requirement);
+      }
+
+      return UnAuthorized (context, requirement);
+    }
+
+    private Task HandleUser (AuthorizationHandlerContext context, CustomAuthorize requirement)
+    {
+      if (UserHasClaims (context, requirement))
+      {
+        return Authorized (context, requirement);
+      }
+
+      return UnAuthorized (context, requirement);
+    }
+
+    private bool SourceSystemHasClaims (AuthorizationHandlerContext context, CustomAuthorize requirement)
+    {
+      var claims = new List<string> { "ValueById" };
+
+      return claims.Contains (requirement.Role);
+    }
+
+    private bool UserHasClaims (AuthorizationHandlerContext context, CustomAuthorize requirement)
+    {
+      var claims = context.User.Claims;
+
+      foreach (var claim in claims)
+      {
+        if (claim.Type == requirement.Role)
+        {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     private Task Authorized (AuthorizationHandlerContext context, CustomAuthorize requirement)

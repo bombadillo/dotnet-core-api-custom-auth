@@ -18,8 +18,14 @@ namespace CustomAuthAttribute.Controllers
     [HttpGet ("login")]
     public async Task<IActionResult> Login (CancellationToken cancellationToken)
     {
+      var claims = new List<Claim>
+      {
+        new Claim ("AllValues", ""),
+        new Claim ("ValueById", ""),
+      };
+
       var claimsIdentity = new ClaimsIdentity (
-        null, CookieAuthenticationDefaults.AuthenticationScheme);
+        claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
       var authProperties = new AuthenticationProperties
       {

@@ -13,7 +13,7 @@ namespace CustomAuthAttribute.Controllers
   {
     // GET api/values
 
-    [Authorize (Policy = "CustomAuthorize")]
+    [Authorize (Policy = "AllValues")]
     [HttpGet]
     public ActionResult<IEnumerable<string>> Get ()
     {
@@ -21,6 +21,7 @@ namespace CustomAuthAttribute.Controllers
     }
 
     // GET api/values/5
+    [Authorize (Policy = "ValueById")]
     [HttpGet ("{id}")]
     public ActionResult<string> Get (int id)
     {

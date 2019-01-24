@@ -31,7 +31,8 @@ namespace CustomAuthAttribute
 
       services.AddAuthorization (options =>
       {
-        options.AddPolicy ("CustomAuthorize", policy => policy.Requirements.Add (new CustomAuthorize ()));
+        options.AddPolicy ("AllValues", policy => policy.Requirements.Add (new CustomAuthorize ("AllValues")));
+        options.AddPolicy ("ValueById", policy => policy.Requirements.Add (new CustomAuthorize ("ValueById")));
       });
 
       services.AddSingleton<IAuthorizationHandler, CustomAuthorizeHandler> ();
