@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -17,15 +19,15 @@ namespace CustomAuthAttribute.Authorization
 
     protected override Task HandleRequirementAsync (AuthorizationHandlerContext context, CustomAuthorize requirement)
     {
-      var validSessionId = ValidateSessionId ();
+      var queryStringToken = GetQueryStringToken ();
       var userLoggedIn = context.User.Identity.IsAuthenticated;
 
-      if (validSessionId)
+      if (queryStringToken != null)
       {
-        return HandleSourceSystem (context, requirement);
+        return HandleSourceSystem (context, requirement, queryStringToken);
       }
 
-      if (userLoggedIn && UserHasClaims (context, requirement))
+      if (userLoggedIn)
       {
         return HandleUser (context, requirement);
       }
@@ -33,50 +35,44 @@ namespace CustomAuthAttribute.Authorization
       return UnAuthorized (context, requirement);
     }
 
-    private bool ValidateSessionId ()
+    private JwtSecurityToken GetQueryStringToken () 
     {
       var queries = _httpContextAccessor.HttpContext.Request.Query;
       var sessionIds = queries["session"];
 
       if (sessionIds.Count != 1)
       {
-        return false;
+        return null;
       }
 
-      return !string.IsNullOrWhiteSpace (sessionIds[0]);
-    }
+      var tokenHandler = new JwtSecurityTokenHandler();
+      var token = tokenHandler.ReadToken(sessionIds[0]) as JwtSecurityToken;
 
-    private Task HandleSourceSystem (AuthorizationHandlerContext context, CustomAuthorize requirement)
+      if (ValidateQueryStringToken(token))
+      {
+        return token;
+      }
+
+      return null;
+    }    
+
+    private bool ValidateQueryStringToken (JwtSecurityToken token)
     {
-      if (SourceSystemHasClaims (context, requirement))
+      return token != null;
+    }    
+
+    private Task HandleSourceSystem (AuthorizationHandlerContext context, CustomAuthorize requirement, JwtSecurityToken token)
+    {
+      if (UserHasClaims (token.Claims, requirement))
       {
         return Authorized (context, requirement);
       }
 
       return UnAuthorized (context, requirement);
-    }
+    }    
 
-    private Task HandleUser (AuthorizationHandlerContext context, CustomAuthorize requirement)
+    private bool UserHasClaims (IEnumerable<Claim> claims, CustomAuthorize requirement)
     {
-      if (UserHasClaims (context, requirement))
-      {
-        return Authorized (context, requirement);
-      }
-
-      return UnAuthorized (context, requirement);
-    }
-
-    private bool SourceSystemHasClaims (AuthorizationHandlerContext context, CustomAuthorize requirement)
-    {
-      var claims = new List<string> { "ValueById" };
-
-      return claims.Contains (requirement.Role);
-    }
-
-    private bool UserHasClaims (AuthorizationHandlerContext context, CustomAuthorize requirement)
-    {
-      var claims = context.User.Claims;
-
       foreach (var claim in claims)
       {
         if (claim.Type == requirement.Role)
@@ -86,7 +82,17 @@ namespace CustomAuthAttribute.Authorization
       }
 
       return false;
-    }
+    }    
+
+    private Task HandleUser (AuthorizationHandlerContext context, CustomAuthorize requirement)
+    {
+      if (UserHasClaims (context.User.Claims, requirement))
+      {
+        return Authorized (context, requirement);
+      }
+
+      return UnAuthorized (context, requirement);
+    }        
 
     private Task Authorized (AuthorizationHandlerContext context, CustomAuthorize requirement)
     {

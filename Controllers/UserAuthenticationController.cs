@@ -13,7 +13,7 @@ namespace CustomAuthAttribute.Controllers
 {
   [Route ("api/[controller]")]
   [ApiController]
-  public class AuthenticationController : ControllerBase
+  public class UserAuthenticationController : ControllerBase
   {
     [HttpGet ("login")]
     public async Task<IActionResult> Login (CancellationToken cancellationToken)

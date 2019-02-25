@@ -12,8 +12,9 @@
 
 ## Example usage
 
-- Cookie user can login using http://localhost:5000/api/authentication/login
-- Logged in user should have access to all routes
+- Cookie user can login using http://localhost:5000/api/userauthentication/login
+- Query string user can login using http://localhost:5000/api/querystringauthentication/login
+- Logged in cookie user should have access to all routes
 - Query string user should only have access to Value/{id} route
 
 ### Route access
