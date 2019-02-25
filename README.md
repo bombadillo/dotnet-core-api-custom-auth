@@ -13,7 +13,11 @@
 ## Example usage
 
 - Cookie user can login using http://localhost:5000/api/userauthentication/login
-- Query string user can login using http://localhost:5000/api/querystringauthentication/login
+- Query string user can login using http://localhost:5000/api/querystringauthentication/login/{ID}
+  - ID must be specified
+  - Passing ID 1 will grant access to values & values/{ID}
+  - Any other ID will be limited to the values/{ID}
+  - This enables us to demonstrate multi query string users
 - Logged in cookie user should have access to all routes
 - Query string user should only have access to Value/{id} route
 
