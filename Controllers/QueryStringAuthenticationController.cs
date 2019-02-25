@@ -18,13 +18,29 @@ namespace CustomAuthAttribute.Controllers
   [ApiController]
   public class QueryStringAuthenticationController : ControllerBase
   {
-    [HttpGet ("login")]
-    public async Task<IActionResult> Login (CancellationToken cancellationToken)
+    [HttpGet ("login/{id}")]
+    public IActionResult Login (int id)
     {
-      var claims = new List<Claim>
+      IEnumerable<Claim> claims;
+
+      switch (id)
       {
-        new Claim ("ValueById", ""),
-      };
+        case 1:
+          claims = new List<Claim>
+          {
+            new Claim ("ValueById", ""),
+            new Claim ("AllValues", ""),
+          };
+          break;
+
+        default:
+          claims = new List<Claim>
+          {
+            new Claim ("ValueById", ""),
+          };
+          break;
+
+      }                 
 
       var tokenHandler = new JwtSecurityTokenHandler();
       var key = Encoding.ASCII.GetBytes("SECRET KEY IS THE BEST KEY");
