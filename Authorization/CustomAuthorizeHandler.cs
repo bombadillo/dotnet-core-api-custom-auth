@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 
 namespace CustomAuthAttribute.Authorization
 {
@@ -19,12 +21,12 @@ namespace CustomAuthAttribute.Authorization
 
     protected override Task HandleRequirementAsync (AuthorizationHandlerContext context, CustomAuthorize requirement)
     {
-      var queryStringToken = GetQueryStringToken ();
+      var queryStringTokenValue = GetQueryStringTokenValue ();
       var userLoggedIn = context.User.Identity.IsAuthenticated;
 
-      if (queryStringToken != null)
+      if (queryStringTokenValue != null)
       {
-        return HandleSourceSystem (context, requirement, queryStringToken);
+        return HandleSourceSystem (context, requirement, queryStringTokenValue);
       }
 
       if (userLoggedIn)
@@ -35,7 +37,7 @@ namespace CustomAuthAttribute.Authorization
       return UnAuthorized (context, requirement);
     }
 
-    private JwtSecurityToken GetQueryStringToken () 
+    private string GetQueryStringTokenValue()
     {
       var queries = _httpContextAccessor.HttpContext.Request.Query;
       var sessionIds = queries["session"];
@@ -45,25 +47,60 @@ namespace CustomAuthAttribute.Authorization
         return null;
       }
 
-      var tokenHandler = new JwtSecurityTokenHandler();
-      var token = tokenHandler.ReadToken(sessionIds[0]) as JwtSecurityToken;
+      return sessionIds[0];   
+    }
 
-      if (ValidateQueryStringToken(token))
+    private JwtSecurityToken GetQueryStringJwtToken (string queryStringTokenValue) 
+    {         
+      var tokenHandler = new JwtSecurityTokenHandler();
+      var token = tokenHandler.ReadToken(queryStringTokenValue) as JwtSecurityToken;
+
+      if (token == null)
       {
-        return token;
+        return null;
       }
 
-      return null;
+      return token;
     }    
 
-    private bool ValidateQueryStringToken (JwtSecurityToken token)
+    private bool ValidateQueryStringToken (string queryStringTokenValue)
     {
-      return token != null;
+      var validationParameters = new TokenValidationParameters()
+      {
+          ValidateLifetime = true,
+          ValidateAudience = false,
+          ValidateIssuer = false,
+          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SECRET KEY IS THE BEST KEY"))
+      };
+
+      try 
+      {
+        SecurityToken validatedToken;
+        var tokenHandler = new JwtSecurityTokenHandler();
+        tokenHandler.ValidateToken(queryStringTokenValue, validationParameters, out validatedToken);
+      }
+      catch(Exception) {
+        return false;
+      }      
+      
+      return true;
     }    
 
-    private Task HandleSourceSystem (AuthorizationHandlerContext context, CustomAuthorize requirement, JwtSecurityToken token)
+    private Task HandleSourceSystem (AuthorizationHandlerContext context, CustomAuthorize requirement, string queryStringTokenValue)
     {
-      if (UserHasClaims (token.Claims, requirement))
+      if (!ValidateQueryStringToken(queryStringTokenValue))
+      {
+        return UnAuthorized(context, requirement);
+      }
+
+      var jwtToken = GetQueryStringJwtToken(queryStringTokenValue);
+
+      if (jwtToken == null)
+      {
+        return UnAuthorized(context, requirement);
+      }
+
+      if (UserHasClaims (jwtToken.Claims, requirement))
       {
         return Authorized (context, requirement);
       }
